@@ -30,7 +30,12 @@
     <button id="compileButton">Compile Code</button>        
     <button id="runButton">Run Code</button>
     <div>
-        <textarea id="output" readonly width="100%"></textarea>
+        <p>
+            Errors: 
+        <textarea id="error" readonly></textarea>
+            Output: 
+        <textarea id="output" readonly></textarea>
+        </p>
     </div>
 
     <!-- Include Ace Editor and autocompletion modules -->
@@ -53,14 +58,24 @@
             }
             });
             let result = await response.text(); 
-            if(result.length == 0) {
-                output.value = "No error";
+            console.log(result);
+            let resultE = result.indexOf("error\":")
+            let resultO = result.indexOf("output\":")
+            let resultOL = result.lastIndexOf("}");
+            let resultError = result.substring(resultE+8, resultO-3);
+            let resultOutput = result.substring(resultO+9, resultOL-2);
+
+            const error = document.getElementById('error');
+            const output = document.getElementById('output');
+
+            if(resultError.length == 0) {
+                error.value = "No error";
                 noerror = true;
             } else {
-                const output = document.getElementById('output');
-                output.value = result;
+                error.value = resultError;                
                 noerror = false;
-            }            
+            }
+            output.value = resultOutput;
         }
 
         async function execute(code) {
@@ -76,12 +91,18 @@
                 }
                 });
                 let result = await response.text(); 
-                if(result.length == 0) {
-                    output.value = "No error";
-                } else {
-                    const output = document.getElementById('output');
-                    output.value = result;
-                }            
+                // We need to do text parsing because of invalid escape characters in response 
+                console.log(result);
+                let resultE = result.indexOf("error\":");
+                let resultO = result.indexOf("output\":");
+                let resultOL = result.lastIndexOf("}");
+                let resultError = result.substring(resultE+8, resultO-3);
+                let resultOutput = result.substring(resultO+9, resultOL-2);
+
+                const error = document.getElementById('error');
+                const output = document.getElementById('output');
+                error.value = resultError;
+                output.value = resultOutput;
             } else {
                 output.value = "First fix errors please!!!";
             }
@@ -107,7 +128,7 @@
 
             // Note: Java code execution requires a backend server, which isn't covered in this example.
         });
-        document.getElementById("compileButton").addEventListener("click", function() {
+        document.getElementById("runButton").addEventListener("click", function() {
             const code = editor.getValue();
             //document.getElementById("output").textContent = `You wrote:\n${code}`;
             execute(code);
