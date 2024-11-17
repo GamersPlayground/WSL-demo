@@ -1,10 +1,7 @@
 package com.ex.demo.demo;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class Controller {
-    
+
     @GetMapping("/get")
     public String doGet() {
         return "<!DOCTYPE html>" +
@@ -29,70 +26,81 @@ public class Controller {
         "</body>" +
         "</html>";
     }
-    
-    @Autowired
-    private FileService fileWriter;
-    private FileService fileCreator; 
 
-    @PostMapping("/post")
-    public String postMethodName(@RequestBody String entity) {
-        fileCreator = new FileService(); 
-        fileWriter = new FileService();
-        String cleanedUpEntity = cleanUpString(entity);
-        //System.out.print(entity);
+    @PostMapping("/compile")
+    public String CompileCode(@RequestBody User user) {
 
         try{
-            fileCreator.createFile();
-            fileWriter.writeToFile("D:\\dev\\Java\\spring\\testFile.gcc", cleanedUpEntity);
-            Process process = Runtime.getRuntime().exec("wsl <gcc testFile.gcc>");            
-            return /*"This is Posted" + entity + "\n\n"*/entity + "\n\n" + execute() + process;
-        } catch (IOException e)
-        {
+            
+            Utils.fileService = new FileService(); 
+            Utils.fileService.createFile(Utils.filePath+Utils.filename);
+            String code = user.getCode();
+            Utils.fileService.writeToFile(Utils.filePath+Utils.filename, code);
+            CommandExecutor1 commandExecutor1 = new CommandExecutor1();
+            // For CPP: check which c compiler is present 
+            // 1. gcc
+            // 2. Windows 
+            // 3. mac clang
+            // etc and then execute that command here only giving command for linux: 
+            //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
+            // For Java: 
+            // we simply use javac filename 
+            // then java filename.class
+            // check if os is window: 
+            // else if linux 
+            // else if mac ....etc
+            // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
+            //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
+            
+            String ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+Utils.filePath + " " + Utils.filePath+Utils.filename);// + " 2> " + filePath+"_output.txt"); // windows
+            System.out.println(ret);
+            return ret;
+        } catch (IOException e) {
             System.out.print(e);
             return "Error writing to file";
         }
         
     }
-    
 
-    private String execute() {
-        String ret = "";
+    @PostMapping("/execute")
+    public String ExecuteCode(@RequestBody User user) {
+
         try{
-            //Run macro on target
-            Process p = Runtime.getRuntime().exec(new String[]{"bash","-c","ls -al"});
             
-            //Read output
-            StringBuilder out = new StringBuilder();
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line = null, previous = null;
-            while ((line = br.readLine()) != null)
-                if (!line.equals(previous)) {
-                    previous = line;
-                    out.append(line).append('\n');
-                    System.out.println(line);
-                    ret += line;
-                }
-
-            //Check result
-            if (p.waitFor() == 0) {
-                return ret;
-            } else {
-                return out.toString();
-            }
-
-
-        }catch(Exception e) {
-            ret = e.toString();
-            System.err.println(ret);
+            Utils.fileService = new FileService(); 
+            Utils.fileService.createFile(Utils.filePath+Utils.filename);
+            String code = user.getCode();
+            Utils.fileService.writeToFile(Utils.filePath+Utils.filename, code);
+            CommandExecutor1 commandExecutor1 = new CommandExecutor1();
+            // For CPP: check which c compiler is present 
+            // 1. gcc
+            // 2. Windows 
+            // 3. mac clang
+            // etc and then execute that command here only giving command for linux: 
+            //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
+            // For Java: 
+            // we simply use javac filename 
+            // then java filename.class
+            // check if os is window: 
+            // else if linux 
+            // else if mac ....etc
+            // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
+            //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
+            
+            String ret = commandExecutor1.executeCommand("cmd", "/c", "java "+ Utils.filePath+Utils.classFileName);// + " 2> " + filePath+"_output.txt"); // windows
+            System.out.println(ret);
+            return ret;
+        } catch (IOException e) {
+            System.out.print(e);
+            return "Error writing to file";
         }
-        return ret;        
+        
     }
 
     public String cleanUpString(String inputString) {
         // Example cleanup operations
         String cleanedString = inputString.trim(); // Remove leading/trailing whitespace
         cleanedString = cleanedString.replaceAll("[^a-zA-Z0-9]", ""); // Remove special characters
-        cleanedString = cleanedString.toLowerCase(); // Convert to lowercase
     
         // Add more cleanup operations as needed
         // ...

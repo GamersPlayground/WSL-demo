@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class FileService {
-
     public void writeToFile(String filePath, String content) throws IOException {
         try (FileWriter writer = new FileWriter(filePath)) {
             writer.write(content);
@@ -20,9 +19,19 @@ public class FileService {
             System.out.println(e);
         }
     }
+    public void deleteFile(String filePath){
 
-    public void createFile(){
-        String filePath =  "D:\\dev\\Java\\spring\\_tmp\\testFile.txt" ;
+        try{
+            Path path = Paths.get(filePath);
+            if(Files.exists(path)){
+                Files.delete(path);
+            }
+        } catch (IOException e) {
+            System.err.println("error creating file: " + e.getMessage());
+        }
+    }
+    public void createFile(String filePath){
+        //String opsys = System.getProperty("os.name");    
 
         try{
             Path path = Paths.get(filePath);

@@ -9,26 +9,25 @@ import org.springframework.stereotype.Service;
 @Service
 public class CommandExecutor1 {
 
-    public String executeCommand(String command) {
+    public String executeCommand(String... command) {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder();
-            processBuilder.command("bash", "-c", command);
+            //ProcessBuilder processBuilder = new ProcessBuilder();
+            //processBuilder.command(command);
+            Process process = Runtime.getRuntime().exec(command);
 
-            Process process = processBuilder.start();
+            //Process process = processBuilder.start();
 
             StringBuilder output = new StringBuilder();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
             String line;
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
 
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("Command execution failed with exit code: " + exitCode);
-            }
+            process.waitFor();
+            System.out.println("Waiting over.");
 
             return output.toString();
 
