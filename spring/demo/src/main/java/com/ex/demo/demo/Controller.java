@@ -52,9 +52,14 @@ public class Controller {
             // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
             //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
             
-            String ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+Utils.filePath + " " + Utils.filePath+Utils.filename);// + " 2> " + filePath+"_output.txt"); // windows
+            String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+Utils.filePath + " " + Utils.filePath+Utils.filename);// + " 2> " + filePath+"_output.txt"); // windows
             System.out.println(ret);
-            return ret;
+            String jsonLike = "{" + 
+            "\"error\":\"" + ret[0] + "\"," +
+            "\"output\":\"" + ret[1] +"\"," +
+            "}";
+            System.out.println(jsonLike);
+            return jsonLike ;
         } catch (IOException e) {
             System.out.print(e);
             return "Error writing to file";
@@ -64,37 +69,30 @@ public class Controller {
 
     @PostMapping("/execute")
     public String ExecuteCode(@RequestBody User user) {
-
-        try{
-            
-            Utils.fileService = new FileService(); 
-            Utils.fileService.createFile(Utils.filePath+Utils.filename);
-            String code = user.getCode();
-            Utils.fileService.writeToFile(Utils.filePath+Utils.filename, code);
-            CommandExecutor1 commandExecutor1 = new CommandExecutor1();
-            // For CPP: check which c compiler is present 
-            // 1. gcc
-            // 2. Windows 
-            // 3. mac clang
-            // etc and then execute that command here only giving command for linux: 
-            //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
-            // For Java: 
-            // we simply use javac filename 
-            // then java filename.class
-            // check if os is window: 
-            // else if linux 
-            // else if mac ....etc
-            // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
-            //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
-            
-            String ret = commandExecutor1.executeCommand("cmd", "/c", "java "+ Utils.filePath+Utils.classFileName);// + " 2> " + filePath+"_output.txt"); // windows
-            System.out.println(ret);
-            return ret;
-        } catch (IOException e) {
-            System.out.print(e);
-            return "Error writing to file";
-        }
+        CommandExecutor1 commandExecutor1 = new CommandExecutor1();
+        // For CPP: check which c compiler is present 
+        // 1. gcc
+        // 2. Windows 
+        // 3. mac clang
+        // etc and then execute that command here only giving command for linux: 
+        //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
+        // For Java: 
+        // we simply use javac filename 
+        // then java filename.class
+        // check if os is window: 
+        // else if linux 
+        // else if mac ....etc
+        // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
+        //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
         
+        String [] ret = commandExecutor1.executeCommand("cmd", "/c", "java -classpath "+ Utils.filePath+ " " + Utils.className);// + " 2> " + filePath+"_output.txt"); // windows
+        String jsonLike = "{" + 
+        "\"error\":\"" + ret[0] + "\"," +
+        "\"output\":\"" + ret[1] +"\"," +
+        "}";
+
+        System.out.println(jsonLike);
+        return jsonLike;
     }
 
     public String cleanUpString(String inputString) {
