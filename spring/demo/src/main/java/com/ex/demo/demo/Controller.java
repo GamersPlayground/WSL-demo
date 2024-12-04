@@ -51,7 +51,8 @@ public class Controller {
             // else if mac ....etc
             // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
             //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
-            
+            String operatingSystem = System.getProperty("os.name");
+
             String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+Utils.filePath + " " + Utils.filePath+Utils.filename);// + " 2> " + filePath+"_output.txt"); // windows
             System.out.println(ret);
             String jsonLike = "{" + 
@@ -84,6 +85,7 @@ public class Controller {
         // else if mac ....etc
         // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
         //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
+        
         
         String [] ret = commandExecutor1.executeCommand("cmd", "/c", "java -classpath "+ Utils.filePath+ " " + Utils.className);// + " 2> " + filePath+"_output.txt"); // windows
         String jsonLike = "{" + 
