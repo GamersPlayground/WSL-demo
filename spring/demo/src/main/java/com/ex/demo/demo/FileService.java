@@ -1,11 +1,10 @@
 package com.ex.demo.demo;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files; 
-import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.springframework.stereotype.Service;
 
@@ -32,6 +31,10 @@ public class FileService {
     }
     public void createFile(String filePath){
         //String opsys = System.getProperty("os.name");    
+        String dir = System.getProperty("user.dir");
+
+        System.out.println(dir);
+
 
         try{
             Path path = Paths.get(filePath);

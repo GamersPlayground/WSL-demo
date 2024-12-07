@@ -112,13 +112,28 @@
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/java");
 
+        editor.setValue(`
+        //This is a sample code
+        public class Test 
+        {
+            public static void main(String[] args)
+            {
+
+            }
+        }public class Test 
+        {
+            public static void main(String[] args)
+            {
+
+            }
+        }`, 1);
+
         // Enable autocompletion and snippets
         editor.setOptions({
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
             enableSnippets: true
         });
-
 
         // Run Code button functionality (for demonstration)
         document.getElementById("compileButton").addEventListener("click", function() {

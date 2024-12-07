@@ -51,20 +51,50 @@ public class Controller {
             // else if mac ....etc
             // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
             //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
-            
-            String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+Utils.filePath + " " + Utils.filePath+Utils.filename);// + " 2> " + filePath+"_output.txt"); // windows
-            System.out.println(ret);
-            String jsonLike = "{" + 
-            "\"error\":\"" + ret[0] + "\"," +
-            "\"output\":\"" + ret[1] +"\"," +
-            "}";
-            System.out.println(jsonLike);
-            return jsonLike ;
+            String OS = System.getProperty("os.name");
+
+            if(OS.equals("Windows 11"))
+            {
+                String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath + Utils.filename);//windows
+                System.out.println(ret);
+                String jsonLike = "{" + 
+                "\"error\":\"" + ret[0] + "\"," +
+                "\"output\":\"" + ret[1] +"\"," +
+                "}";
+                System.out.println(jsonLike);
+                return jsonLike ;
+            }
+            else if(OS.equals("Linux"))
+            {
+                String [] ret = commandExecutor1.executeCommand("bash", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath + Utils.filename);//Linux
+                System.out.println(ret);
+                String jsonLike = "{" + 
+                "\"error\":\"" + ret[0] + "\"," +
+                "\"output\":\"" + ret[1] +"\"," +
+                "}";
+                System.out.println(jsonLike);
+                return jsonLike ;
+            }
+            else if(OS.equals("MacOS"))
+            {
+                String [] ret = commandExecutor1.executeCommand("bash", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath+Utils.filename);// MacOS
+                System.out.println(ret);
+                String jsonLike = "{" + 
+                "\"error\":\"" + ret[0] + "\"," +
+                "\"output\":\"" + ret[1] +"\"," +
+                "}";
+                System.out.println(jsonLike);
+                return jsonLike ;
+            }
+            else
+            {
+                System.out.println("IDFK");
+            }  
+            return OS;
         } catch (IOException e) {
             System.out.print(e);
             return "Error writing to file";
-        }
-        
+        }        
     }
 
     @PostMapping("/execute")
@@ -84,6 +114,7 @@ public class Controller {
         // else if mac ....etc
         // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
         //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
+        
         
         String [] ret = commandExecutor1.executeCommand("cmd", "/c", "java -classpath "+ Utils.filePath+ " " + Utils.className);// + " 2> " + filePath+"_output.txt"); // windows
         String jsonLike = "{" + 
