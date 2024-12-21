@@ -57,9 +57,13 @@ public class Controller {
             {
                 String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath + Utils.filename);//windows
                 System.out.println(ret);
+
+                String error = ret[0].replace("\n", " ");
+                String output = ret[1].replace("\n", " ");
+
                 String jsonLike = "{" + 
-                "\"error\":\"" + ret[0] + "\"," +
-                "\"output\":\"" + ret[1] +"\"," +
+                "\"error\":\"" + error + "\"," +
+                "\"output\":\"" + output +"\"," +
                 "}";
                 System.out.println(jsonLike);
                 return jsonLike ;
@@ -88,7 +92,7 @@ public class Controller {
             }
             else
             {
-                System.out.println("IDFK");
+                System.out.println("use an existing OS please");
             }  
             return OS;
         } catch (IOException e) {

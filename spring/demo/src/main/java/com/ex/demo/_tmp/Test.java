@@ -1,8 +1,14 @@
-package com.ex.demo._tmp;
+//This is a sample code 
+public class Test {
+    public static void main(String[] args) {
+        int rows = 4;
+        int columns = 4;
 
-public class  Test {
-    public static void main(String[] args)
-    {
-        System.out.println("AFAWFS");
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < columns; j++) {
+                System.out.print("* ");
+            }
+            System.out.println();
+        }
     }
 }
