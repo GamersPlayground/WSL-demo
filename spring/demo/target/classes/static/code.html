@@ -44,8 +44,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-java.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.js"></script>
 
+    <!--Tabs interface-->
+    <div class = "tab">
+        <button  class="tab" id="tab-1">Tab 1 (Java)</button>
+        <button  class="tab" id="tab-2">Tab 2 (Python)</button>
+        <button  class="tab" id="tab-3">Tab 3 (C++)</button>
+    </div>
+
+    <!--Acce editor containers-->
+    <div id="editor-1"></div>
+    <div id="editor-2"></div>
+    <div id="editor-3"></div>
+
     <script>
         let noerror = false;
+
+
         async function compile(code) {
             const response = await fetch("/compile", {
             method: "POST",
@@ -111,8 +125,9 @@
         const editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/java");
-        editor.setValue(`//This is a sample code 
-public class Test {
+
+        //default value of editor 
+        editor.setValue(`public class Test {
     public static void main(String[] args) {
         int rows = 4; //number of rows
         int columns = 4; //number of columns
@@ -148,6 +163,34 @@ public class Test {
             execute(code);
 
             // Note: Java code execution requires a backend server, which isn't covered in this example.
+        });
+
+        //Initialize Acce editors for each tab
+        const editors = [];
+        const tabs = document.querySelectorAll('.tab');
+
+        tabs.forEach((tab, index) => {
+            const editorId = `editor-${index + 1}`;
+            const editorContainer = document.getElementById(editorId);
+
+            //Initialize Ace editor with language support
+            const editor = ace.edit(editorContainer, {
+                mode : `ace/mode/${tab.textContent.toLowerCase()}`, // Set Language Mode
+                theme: 'ace/theme/monokai',
+            });
+
+            editors.push(editor);
+        });
+
+        //Handle tab switching
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('clixk', () => {
+                //Hide all editors
+                editors.forEach((editor) => editor.container.style.display = 'none');
+
+                //Show the selected editor
+                editors[index].container.style.display = 'block';
+            });
         });
     </script>
 

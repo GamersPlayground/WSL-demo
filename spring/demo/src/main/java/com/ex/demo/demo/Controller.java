@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -28,15 +29,18 @@ public class Controller {
     }
 
     @PostMapping("/compile")
-    public String CompileCode(@RequestBody User user) {
+    public String CompileCode(@RequestBody User user, @RequestParam String language) {
 
         try{
             
             Utils.fileService = new FileService(); 
-            Utils.fileService.createFile(Utils.filePath+Utils.filename);
+            Utils.fileService.createFile(Utils.filePath+Utils.fileName);
             String code = user.getCode();
-            Utils.fileService.writeToFile(Utils.filePath+Utils.filename, code);
+            Utils.fileService.writeToFile(Utils.filePath+Utils.fileName, code);
             CommandExecutor1 commandExecutor1 = new CommandExecutor1();
+            
+
+
             // For CPP: check which c compiler is present 
             // 1. gcc
             // 2. Windows 
@@ -53,56 +57,67 @@ public class Controller {
             //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
             String OS = System.getProperty("os.name");
 
-            if(OS.equals("Windows 11"))
-            {
-                String [] ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath + Utils.filename);//windows
-                System.out.println(ret);
+            String[] ret;
 
-                String error = ret[0].replace("\n", " ");
-                String output = ret[1].replace("\n", " ");
-
-                String jsonLike = "{" + 
-                "\"error\":\"" + error + "\"," +
-                "\"output\":\"" + output +"\"," +
-                "}";
-                System.out.println(jsonLike);
-                return jsonLike ;
-            }
-            else if(OS.equals("Linux"))
+            if(language.equalsIgnoreCase("java"))
             {
-                String [] ret = commandExecutor1.executeCommand("bash", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath + Utils.filename);//Linux
-                System.out.println(ret);
-                String jsonLike = "{" + 
-                "\"error\":\"" + ret[0] + "\"," +
-                "\"output\":\"" + ret[1] +"\"," +
-                "}";
-                System.out.println(jsonLike);
-                return jsonLike ;
+                if(OS.contains("Windows"))
+                {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d " + Utils.filePath + " " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac -cp " + Utils.filePath + " " + Utils.fileName.replace(" .java", ""));
+                } 
+                else 
+                {
+                    ret = commandExecutor1.executeCommand("bash", "/c", "javac -d " + Utils.filePath + " " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("bash", "/c", "javac -cp " + Utils.filePath + " " + Utils.fileName.replace(" .java", ""));
+                }
             }
-            else if(OS.equals("MacOS"))
+            else if(language.equalsIgnoreCase("cpp"))
             {
-                String [] ret = commandExecutor1.executeCommand("bash", "/c", "javac -d "+ Utils.filePath + " " + Utils.filePath+Utils.filename);// MacOS
-                System.out.println(ret);
-                String jsonLike = "{" + 
-                "\"error\":\"" + ret[0] + "\"," +
-                "\"output\":\"" + ret[1] +"\"," +
-                "}";
-                System.out.println(jsonLike);
-                return jsonLike ;
+                if(OS.contains("Windows"))
+                {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.exe");
+                    ret = commandExecutor1.executeCommand("cmd", "/c", Utils.filePath + "a.exe");
+                }
+                else
+                {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.out");
+                    ret = commandExecutor1.executeCommand("bash", "-c", Utils.filePath + "a.out");
+                }
+            }
+            else if (language.equalsIgnoreCase("python"))
+            {
+                if(OS.contains("Windows"))
+                {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "python " + Utils.filePath + Utils.fileName); 
+                }
+                else
+                {
+                    ret = commandExecutor1.executeCommand("bash", "/c", "python " + Utils.filePath + Utils.fileName);
+                }
             }
             else
             {
-                System.out.println("use an existing OS please");
-            }  
-            return OS;
+                return "{\"error\":\"Unsupported language.\"}";
+            }
+
+            String error = ret[0].replace("\n", " ");
+            String output = ret[1].replace("\n", " ");
+
+            String jsonLike = "{" +
+                "\"error\":\"" + error + "\"," +
+                "\"output\":\"" + output + "\"" +
+                "}";
+            
         } catch (IOException e) {
-            System.out.print(e);
+            e.printStackTrace();
             return "Error writing to file";
-        }        
+        }
+                return language;        
     }
 
     @PostMapping("/execute")
-    public String ExecuteCode(@RequestBody User user) {
+    public String ExecuteCode(@RequestBody User user, @RequestParam String language) {
         CommandExecutor1 commandExecutor1 = new CommandExecutor1();
         // For CPP: check which c compiler is present 
         // 1. gcc
@@ -118,17 +133,63 @@ public class Controller {
         // else if mac ....etc
         // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
         //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
-        
-        
-        String [] ret = commandExecutor1.executeCommand("cmd", "/c", "java -classpath "+ Utils.filePath+ " " + Utils.className);// + " 2> " + filePath+"_output.txt"); // windows
-        String jsonLike = "{" + 
-        "\"error\":\"" + ret[0] + "\"," +
-        "\"output\":\"" + ret[1] +"\"," +
-        "}";
+        String OS = System.getProperty("os.name");
 
-        System.out.println(jsonLike);
-        return jsonLike;
+        try {
+            String[] ret;
+            if (language.equalsIgnoreCase("java")) {
+                if (OS.contains("Windows")) {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "java -cp " + Utils.filePath + " " + Utils.fileName.replace(".java", ""));
+                } else {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "javac " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("bash", "-c", "java -cp " + Utils.filePath + " " + Utils.fileName.replace(".java", ""));
+                }
+            } else if (language.equalsIgnoreCase("cpp")) {
+                if (OS.contains("Windows")) {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.exe");
+                    ret = commandExecutor1.executeCommand("cmd", "/c", Utils.filePath + "a.exe");
+                } else {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.out");
+                    ret = commandExecutor1.executeCommand("bash", "-c", Utils.filePath + "a.out");
+                }
+            } else if (language.equalsIgnoreCase("python")) {
+                if (OS.contains("Windows")) {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "python " + Utils.filePath + Utils.fileName);
+                } else {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "python3 " + Utils.filePath + Utils.fileName);
+                }
+            } else {
+                return "{\"error\":\"Unsupported language.\"}";
+            }
+    
+            // Replace newline characters with spaces
+            String error = ret[0].replace("\n", " ");
+            String output = ret[1].replace("\n", " ");
+    
+            String jsonLike = "{" + 
+                "\"error\":\"" + error + "\"," +
+                "\"output\":\"" + output + "\"" +
+                "}";
+            System.out.println(jsonLike);
+            return jsonLike;
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{\"error\":\"An error occurred during execution.\"}";
+        }
     }
+
+/**
+ * Cleans up the input string by performing several operations.
+ * 
+ * This method trims leading and trailing whitespace from the input string
+ * and removes any special characters, leaving only alphanumeric characters.
+ * Additional cleanup operations can be added as needed.
+ * 
+ * @param inputString The string to be cleaned up.
+ * @return The cleaned-up string with whitespace trimmed and special characters removed.
+ */
 
     public String cleanUpString(String inputString) {
         // Example cleanup operations
