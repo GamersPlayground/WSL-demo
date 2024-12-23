@@ -29,75 +29,38 @@ public class Controller {
     }
 
     @PostMapping("/compile")
-    public String CompileCode(@RequestBody User user, @RequestParam String language) {
+    public String CompileCode(@RequestBody User user, @RequestParam(required = false) String language) {
+        if (language == null || language.isEmpty()) {
+            return "{\"error\":\"Language parameter is missing.\"}";
+        }
 
-        try{
-            
-            Utils.fileService = new FileService(); 
-            Utils.fileService.createFile(Utils.filePath+Utils.fileName);
+        try {
+            Utils.fileService = new FileService();
+            String fileName = getFileNameByLanguage(language);
+            Utils.fileService.createFile(Utils.filePath + fileName);
             String code = user.getCode();
-            Utils.fileService.writeToFile(Utils.filePath+Utils.fileName, code);
+            Utils.fileService.writeToFile(Utils.filePath + fileName, code);
             CommandExecutor1 commandExecutor1 = new CommandExecutor1();
-            
 
-
-            // For CPP: check which c compiler is present 
-            // 1. gcc
-            // 2. Windows 
-            // 3. mac clang
-            // etc and then execute that command here only giving command for linux: 
-            //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
-            // For Java: 
-            // we simply use javac filename 
-            // then java filename.class
-            // check if os is window: 
-            // else if linux 
-            // else if mac ....etc
-            // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
-            //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
             String OS = System.getProperty("os.name");
-
             String[] ret;
 
-            if(language.equalsIgnoreCase("java"))
-            {
-                if(OS.contains("Windows"))
-                {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d " + Utils.filePath + " " + Utils.filePath + Utils.fileName);
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac -cp " + Utils.filePath + " " + Utils.fileName.replace(" .java", ""));
-                } 
-                else 
-                {
-                    ret = commandExecutor1.executeCommand("bash", "/c", "javac -d " + Utils.filePath + " " + Utils.filePath + Utils.fileName);
-                    ret = commandExecutor1.executeCommand("bash", "/c", "javac -cp " + Utils.filePath + " " + Utils.fileName.replace(" .java", ""));
+            if (language.equalsIgnoreCase("java")) {
+                if (OS.contains("Windows")) {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac -d " + Utils.filePath + " " + Utils.filePath + fileName);
+                } else {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "javac -d " + Utils.filePath + " " + Utils.filePath + fileName);
                 }
-            }
-            else if(language.equalsIgnoreCase("cpp"))
-            {
-                if(OS.contains("Windows"))
-                {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.exe");
-                    ret = commandExecutor1.executeCommand("cmd", "/c", Utils.filePath + "a.exe");
+            } else if (language.equalsIgnoreCase("cpp")) {
+                if (OS.contains("Windows")) {
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "g++ " + Utils.filePath + fileName + " -o " + Utils.filePath + "a.exe");
+                } else {
+                    ret = commandExecutor1.executeCommand("bash", "-c", "g++ " + Utils.filePath + fileName + " -o " + Utils.filePath + "a.out");
                 }
-                else
-                {
-                    ret = commandExecutor1.executeCommand("bash", "-c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.out");
-                    ret = commandExecutor1.executeCommand("bash", "-c", Utils.filePath + "a.out");
-                }
-            }
-            else if (language.equalsIgnoreCase("python"))
-            {
-                if(OS.contains("Windows"))
-                {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "python " + Utils.filePath + Utils.fileName); 
-                }
-                else
-                {
-                    ret = commandExecutor1.executeCommand("bash", "/c", "python " + Utils.filePath + Utils.fileName);
-                }
-            }
-            else
-            {
+            } else if (language.equalsIgnoreCase("python")) {
+                // No compilation needed for Python
+                ret = new String[]{"", "Python code is ready to execute."};
+            } else {
                 return "{\"error\":\"Unsupported language.\"}";
             }
 
@@ -108,75 +71,77 @@ public class Controller {
                 "\"error\":\"" + error + "\"," +
                 "\"output\":\"" + output + "\"" +
                 "}";
-            
+            return jsonLike;
+
         } catch (IOException e) {
             e.printStackTrace();
-            return "Error writing to file";
+            return "{\"error\":\"Error writing to file\"}";
         }
-                return language;        
     }
 
     @PostMapping("/execute")
-    public String ExecuteCode(@RequestBody User user, @RequestParam String language) {
+    public String ExecuteCode(@RequestBody User user, @RequestParam(required = false) String language) {
+        if (language == null || language.isEmpty()) {
+            return "{\"error\":\"Language parameter is missing.\"}";
+        }
+
         CommandExecutor1 commandExecutor1 = new CommandExecutor1();
-        // For CPP: check which c compiler is present 
-        // 1. gcc
-        // 2. Windows 
-        // 3. mac clang
-        // etc and then execute that command here only giving command for linux: 
-        //String ret = commandExecutor1.executeCommand("gcc "+ filePath + "-o " + "test.out");
-        // For Java: 
-        // we simply use javac filename 
-        // then java filename.class
-        // check if os is window: 
-        // else if linux 
-        // else if mac ....etc
-        // String ret = commandExecutor1.executeCommand("/bin/sh", "-c", "ls -l"); // linux
-        //String ret = commandExecutor1.executeCommand("cmd", "/c", "dir /a"); // windows
         String OS = System.getProperty("os.name");
 
         try {
             String[] ret;
+            String fileName = getFileNameByLanguage(language);
             if (language.equalsIgnoreCase("java")) {
                 if (OS.contains("Windows")) {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "javac " + Utils.filePath + Utils.fileName);
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "java -cp " + Utils.filePath + " " + Utils.fileName.replace(".java", ""));
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "java -cp " + Utils.filePath + " " + Utils.className);
                 } else {
-                    ret = commandExecutor1.executeCommand("bash", "-c", "javac " + Utils.filePath + Utils.fileName);
-                    ret = commandExecutor1.executeCommand("bash", "-c", "java -cp " + Utils.filePath + " " + Utils.fileName.replace(".java", ""));
+                    ret = commandExecutor1.executeCommand("bash", "-c", "java -cp " + Utils.filePath + " " + Utils.className);
                 }
             } else if (language.equalsIgnoreCase("cpp")) {
                 if (OS.contains("Windows")) {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.exe");
                     ret = commandExecutor1.executeCommand("cmd", "/c", Utils.filePath + "a.exe");
                 } else {
-                    ret = commandExecutor1.executeCommand("bash", "-c", "g++ " + Utils.filePath + Utils.fileName + " -o " + Utils.filePath + "a.out");
                     ret = commandExecutor1.executeCommand("bash", "-c", Utils.filePath + "a.out");
                 }
             } else if (language.equalsIgnoreCase("python")) {
                 if (OS.contains("Windows")) {
-                    ret = commandExecutor1.executeCommand("cmd", "/c", "python " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("cmd", "/c", "python " + Utils.filePath + fileName);
                 } else {
-                    ret = commandExecutor1.executeCommand("bash", "-c", "python3 " + Utils.filePath + Utils.fileName);
+                    ret = commandExecutor1.executeCommand("bash", "-c", "python3 " + Utils.filePath + fileName);
                 }
             } else {
                 return "{\"error\":\"Unsupported language.\"}";
             }
-    
-            // Replace newline characters with spaces
+
             String error = ret[0].replace("\n", " ");
             String output = ret[1].replace("\n", " ");
-    
-            String jsonLike = "{" + 
+
+            String jsonLike = "{" +
                 "\"error\":\"" + error + "\"," +
                 "\"output\":\"" + output + "\"" +
                 "}";
-            System.out.println(jsonLike);
             return jsonLike;
-    
+
         } catch (Exception e) {
             e.printStackTrace();
             return "{\"error\":\"An error occurred during execution.\"}";
+        }
+    }
+
+    private static String getFileNameByLanguage(String language) {
+        if (language == null) {
+            throw new NullPointerException("Language cannot be null");
+        }
+        switch (language.toLowerCase()) {
+            case "java":
+                return Utils.fileNameJava;
+            case "cpp":
+                return Utils.fileNameCpp;
+            case "python":
+                return Utils.fileNamePy;
+            default:
+                throw new IllegalArgumentException(
+                        String.format("Unsupported language: %s", language));
         }
     }
 

@@ -21,6 +21,23 @@
             font-size: 16px;
             cursor: pointer;
         }
+        .tab {
+            display: inline-block;
+            padding: 10px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #ddd;
+        }
+        .editor-container {
+            display: none;
+        }
+        .editor-container.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -42,59 +59,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-java.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-python.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-c_cpp.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.js"></script>
 
     <!--Tabs interface-->
-    <div class = "tab">
-        <button  class="tab" id="tab-1">Tab 1 (Java)</button>
-        <button  class="tab" id="tab-2">Tab 2 (Python)</button>
-        <button  class="tab" id="tab-3">Tab 3 (C++)</button>
-    </div>
+    <div class="tab" id="tab-1">Tab 1 (Java)</div>
+    <div class="tab" id="tab-2">Tab 2 (Python)</div>
+    <div class="tab" id="tab-3">Tab 3 (C++)</div>
 
     <!--Acce editor containers-->
-    <div id="editor-1"></div>
-    <div id="editor-2"></div>
-    <div id="editor-3"></div>
+    <div id="editor-1" class="editor-container"></div>
+    <div id="editor-2" class="editor-container"></div>
+    <div id="editor-3" class="editor-container"></div>
 
     <script>
         let noerror = false;
 
-
-        async function compile(code) {
-            const response = await fetch("/compile", {
-            method: "POST",
-            body: JSON.stringify({
-                userId: "abc1",
-                code,
-            }),
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            }
-            });
-            let result = await response.text(); 
-            console.log(result);
-            let resultE = result.indexOf("error\":")
-            let resultO = result.indexOf("output\":")
-            let resultOL = result.lastIndexOf("}");
-            let resultError = result.substring(resultE+8, resultO-3);
-            let resultOutput = result.substring(resultO+9, resultOL-2);
-
-            const error = document.getElementById('error');
-            const output = document.getElementById('output');
-
-            if(resultError.length == 0) {
-                error.value = "No error";
-                noerror = true;
-            } else {
-                error.value = resultError;                
-                noerror = false;
-            }
-            output.value = resultOutput;
-        }
-
-        async function execute(code) {
-            if(noerror) {
-                const response = await fetch("/execute", {
+        async function compile(code, language) {
+            const response = await fetch(`/compile?language=${language}`, {
                 method: "POST",
                 body: JSON.stringify({
                     userId: "abc1",
@@ -103,15 +86,47 @@
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
                 }
+            });
+            let result = await response.text();
+            console.log(result);
+            let resultE = result.indexOf("error\":");
+            let resultO = result.indexOf("output\":");
+            let resultOL = result.lastIndexOf("}");
+            let resultError = result.substring(resultE + 8, resultO - 3);
+            let resultOutput = result.substring(resultO + 9, resultOL - 2);
+
+            const error = document.getElementById('error');
+            const output = document.getElementById('output');
+
+            if (resultError.length == 0) {
+                error.value = "No error";
+                noerror = true;
+            } else {
+                error.value = resultError;
+                noerror = false;
+            }
+            output.value = resultOutput;
+        }
+
+        async function execute(code, language) {
+            if (noerror) {
+                const response = await fetch(`/execute?language=${language}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        userId: "abc1",
+                        code,
+                    }),
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    }
                 });
-                let result = await response.text(); 
-                // We need to do text parsing because of invalid escape characters in response 
+                let result = await response.text();
                 console.log(result);
                 let resultE = result.indexOf("error\":");
                 let resultO = result.indexOf("output\":");
                 let resultOL = result.lastIndexOf("}");
-                let resultError = result.substring(resultE+8, resultO-3);
-                let resultOutput = result.substring(resultO+9, resultOL-2);
+                let resultError = result.substring(resultE + 8, resultO - 3);
+                let resultOutput = result.substring(resultO + 9, resultOL - 2);
 
                 const error = document.getElementById('error');
                 const output = document.getElementById('output');
@@ -121,6 +136,7 @@
                 output.value = "First fix errors please!!!";
             }
         }
+
         // Initialize Ace Editor
         const editor = ace.edit("editor");
         editor.setTheme("ace/theme/monokai");
@@ -152,22 +168,19 @@
         // Run Code button functionality (for demonstration)
         document.getElementById("compileButton").addEventListener("click", function() {
             const code = editor.getValue();
-            //document.getElementById("output").textContent = `You wrote:\n${code}`;
-            compile(code);
-
-            // Note: Java code execution requires a backend server, which isn't covered in this example.
+            const language = document.querySelector('.tab.active').textContent.split(' ')[2].toLowerCase();
+            compile(code, language);
         });
         document.getElementById("runButton").addEventListener("click", function() {
             const code = editor.getValue();
-            //document.getElementById("output").textContent = `You wrote:\n${code}`;
-            execute(code);
-
-            // Note: Java code execution requires a backend server, which isn't covered in this example.
+            const language = document.querySelector('.tab.active').textContent.split(' ')[2].toLowerCase();
+            execute(code, language);
         });
 
         //Initialize Acce editors for each tab
         const editors = [];
         const tabs = document.querySelectorAll('.tab');
+        const editorContainers = document.querySelectorAll('.editor-container');
 
         tabs.forEach((tab, index) => {
             const editorId = `editor-${index + 1}`;
@@ -175,7 +188,7 @@
 
             //Initialize Ace editor with language support
             const editor = ace.edit(editorContainer, {
-                mode : `ace/mode/${tab.textContent.toLowerCase()}`, // Set Language Mode
+                mode : `ace/mode/${tab.textContent.split(' ')[2].toLowerCase()}`, // Set Language Mode
                 theme: 'ace/theme/monokai',
             });
 
@@ -184,14 +197,24 @@
 
         //Handle tab switching
         tabs.forEach((tab, index) => {
-            tab.addEventListener('clixk', () => {
-                //Hide all editors
-                editors.forEach((editor) => editor.container.style.display = 'none');
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and editors
+                tabs.forEach(t => t.classList.remove('active'));
+                editorContainers.forEach(ec => ec.classList.remove('active'));
 
-                //Show the selected editor
-                editors[index].container.style.display = 'block';
+                // Add active class to the selected tab and editor
+                tab.classList.add('active');
+                editorContainers[index].classList.add('active');
+
+                // Set the mode of the main editor based on the selected tab
+                const language = tab.textContent.split(' ')[2].toLowerCase();
+                editor.session.setMode(`ace/mode/${language}`);
             });
         });
+
+        // Set the first tab and editor as active by default
+        tabs[0].classList.add('active');
+        editorContainers[0].classList.add('active');
     </script>
 
 </body>
